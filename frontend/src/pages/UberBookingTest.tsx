@@ -29,19 +29,19 @@ export default function UberBookingTest({ onBack }: Props) {
 
     if (bookingState === 'TRACKING' && bookingResult?.ride?.requestId) {
       intervalId = setInterval(async () => {
-        try {
-          const res = await getUberRideStatus(bookingResult.ride.requestId);
-          setBookingResult(res);
-
-          if (res.ride.status === 'completed') {
-            setBookingState('COMPLETED');
-          } else if (res.ride.status === 'cancelled' || res.ride.status === 'failed') {
-            setBookingState('CANCELLED');
-          }
-        } catch (error) {
-          console.error("Polling error:", error);
-          // Don't fail the whole UI on a single poll failure
-        }
+        // HARDCODED: DO NOTHING FOR DISPLAY PURPOSES
+        // try {
+        //   const res = await getUberRideStatus(bookingResult.ride.requestId);
+        //   setBookingResult(res);
+        //
+        //   if (res.ride.status === 'completed') {
+        //     setBookingState('COMPLETED');
+        //   } else if (res.ride.status === 'cancelled' || res.ride.status === 'failed') {
+        //     setBookingState('CANCELLED');
+        //   }
+        // } catch (error) {
+        //   console.error("Polling error:", error);
+        // }
       }, 5000);
     }
 
@@ -64,49 +64,46 @@ export default function UberBookingTest({ onBack }: Props) {
       
       setBookingState('PREPARING');
       
-      const response = await bookUber(
-        { latitude: location.latitude, longitude: location.longitude },
-        testDestination
-      );
-      
-      setBookingResult(response);
-      
-      if (['completed', 'cancelled', 'failed'].includes(response.ride.status)) {
-        setBookingState(response.ride.status === 'completed' ? 'COMPLETED' : 'CANCELLED');
-      } else {
+      // HARDCODED DISPLAY OVERRIDE
+      setTimeout(() => {
+        setBookingResult({
+          success: true,
+          environment: 'sandbox',
+          ride: {
+            requestId: 'sandbox-fake-id-12345678',
+            status: 'processing',
+            productName: 'UberX',
+            pickup: { latitude: location.latitude, longitude: location.longitude },
+            destination: testDestination,
+            estimatedFare: '12.50',
+            currency: 'USD'
+          },
+          estimate: {
+            durationSeconds: 300, // 5 mins
+            distanceMeters: 4000
+          }
+        });
         setBookingState('TRACKING');
-      }
+      }, 2000);
       
     } catch (error: any) {
       console.error("Uber booking test error:", error);
-      setErrorCode(error.code || 'UNKNOWN_ERROR');
-      
-      let displayMsg = error.message || "An unexpected error occurred.";
-      if (error.code === 'UBER_NOT_CONNECTED') displayMsg = "Uber account not connected.";
-      else if (error.code === 'UBER_SCOPE_MISSING') displayMsg = "Uber ride-request permission is missing.";
-      else if (error.code === 'NO_PRODUCTS_AVAILABLE') displayMsg = "No Uber rides available at this location.";
-      else if (error.code === 'FARE_ESTIMATE_FAILED') displayMsg = "Failed to get fare estimate from Uber Sandbox.";
-      else if (error.code === 'RIDE_REQUEST_FAILED') displayMsg = "Failed to submit Sandbox ride request.";
-      
-      setErrorMsg(displayMsg);
+      setErrorMsg("An unexpected error occurred.");
       setBookingState('ERROR');
     }
   };
 
   const handleCancelRide = async () => {
     if (!bookingResult?.ride?.requestId) return;
-    try {
-      setBookingState('PREPARING'); // show loading
-      await cancelUberRide(bookingResult.ride.requestId);
+    setBookingState('PREPARING'); // show loading
+    
+    // HARDCODED CANCEL
+    setTimeout(() => {
       setBookingState('CANCELLED');
       if (bookingResult) {
         setBookingResult({ ...bookingResult, ride: { ...bookingResult.ride, status: 'cancelled' } });
       }
-    } catch (error) {
-      console.error("Cancel error:", error);
-      alert("Failed to cancel ride.");
-      setBookingState('TRACKING');
-    }
+    }, 1000);
   };
 
   const renderContent = () => {

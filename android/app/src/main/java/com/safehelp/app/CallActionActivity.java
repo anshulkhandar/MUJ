@@ -39,22 +39,35 @@ public class CallActionActivity extends Activity {
         } else {
             if (finalDelay > 0) {
                 Log.d("CallActionActivity", "Waiting " + finalDelay + "ms to make call...");
-                new android.os.Handler().postDelayed(this::makeCall, finalDelay);
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(finalDelay);
+                        makeCall(true);
+                    } catch (InterruptedException e) {
+                        Log.e("CallActionActivity", "Call delay interrupted", e);
+                    }
+                }).start();
+                finish(); // Finish immediately so UI is not blocked
             } else {
-                makeCall();
+                makeCall(false);
+                finish();
             }
         }
     }
 
-    private void makeCall() {
+    private void makeCall(boolean useNewTask) {
         try {
             Intent callIntent = new Intent(Intent.ACTION_CALL);
             callIntent.setData(Uri.parse("tel:" + DEFAULT_EMERGENCY_NUMBER));
-            startActivity(callIntent);
+            if (useNewTask) {
+                callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getApplicationContext().startActivity(callIntent);
+            } else {
+                startActivity(callIntent);
+            }
         } catch (SecurityException e) {
             Log.e("CallActionActivity", "Permission Denied: " + e.getMessage());
         }
-        finish();
     }
 
     @Override
@@ -62,7 +75,8 @@ public class CallActionActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST_CALL_PHONE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                makeCall();
+                makeCall(false);
+                finish();
             } else {
                 Log.e("CallActionActivity", "User denied CALL_PHONE permission.");
                 finish();

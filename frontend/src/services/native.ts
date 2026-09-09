@@ -145,6 +145,26 @@ export function areSmsPermissionsGranted(): boolean | null {
 }
 
 export async function pickNativeContact(): Promise<{name: string, phone: string} | null> {
+  // Use modern Web Contacts API if available (Chrome Android supports this natively)
+  if ('contacts' in navigator && 'ContactsManager' in window) {
+    try {
+      const props = ['name', 'tel'];
+      const opts = { multiple: false };
+      const contacts = await (navigator as any).contacts.select(props, opts);
+      if (contacts && contacts.length > 0) {
+        const c = contacts[0];
+        const name = c.name && c.name.length > 0 ? c.name[0] : 'Unknown';
+        const phone = c.tel && c.tel.length > 0 ? c.tel[0] : '';
+        return { name, phone };
+      }
+      return null;
+    } catch (ex) {
+      console.error('Web Contacts API failed or was cancelled:', ex);
+      // Fall through to native intent if it fails for some reason
+    }
+  }
+
+  // Fallback to Native Android Intent bridge
   return new Promise((resolve) => {
     contactResultResolvers.push(resolve);
     window.location.href = "intent://contact_picker#Intent;scheme=safehelp;package=com.safehelp.app;end";

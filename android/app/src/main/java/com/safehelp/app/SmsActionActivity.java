@@ -79,6 +79,7 @@ public class SmsActionActivity extends Activity {
             String hashFragment = "sms_send_result=" + encodedPayload;
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://muj-cnaf.vercel.app/#" + hashFragment));
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.setPackage(getPackageName()); // Force intent to our own app
             startActivity(intent);
         } catch (Exception e) {
             Log.e(TAG, "Failed to return result to React", e);
